@@ -3,6 +3,7 @@ package name.abuchen.portfolio.datatransfer.pdf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -72,6 +73,13 @@ public class PDFInputFile extends Extractor.InputFile
 
     public void convertPDFtoText() throws IOException
     {
+        
+        String fileName = getFile().getPath();
+        if (fileName.endsWith(".txt")) //$NON-NLS-1$
+        {
+            text = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+            return;
+        }
         try (PDDocument document = PDDocument.load(getFile()))
         {
             boolean isProtected = document.isEncrypted();

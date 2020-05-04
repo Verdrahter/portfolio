@@ -34,7 +34,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Kauf");
         this.addDocumentTyp(type);
 
-        Block block = new Block("Kauf .*");
+        Block block = new Block("\\W*Kauf\\W.*");
         type.addBlock(block);
         block.set(new Transaction<BuySellEntry>()
 
@@ -45,13 +45,13 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("isin", "name") //
-                        .find("Gattungsbezeichnung ISIN") //
+                        .find("\\W*Gattungsbezeichnung\\W+ISIN") //
                         .match("(?<name>.*)\\W+(?<isin>.+)")
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("date", "amount", "currency") //
-                        .find("Wert +Konto-Nr. Betrag zu Ihren Lasten *")
-                        .match("(?<date>\\d+.\\d+.\\d{4}) \\d{2}/\\d{4}/\\d{3} (?<currency>\\w{3}) (?<amount>[\\d.]+,\\d+)") //
+                        .find("\\W*Wert\\W+Konto-Nr.\\W+Betrag zu Ihren Lasten\\W*")
+                        .match("\\W*(?<date>\\d+.\\d+.\\d{4}).*(?<currency>\\w{3})\\W+(?<amount>[\\d.]+,\\d+)") //
                         .assign((t, v) -> {
                             t.setDate(asDate(v.get("date")));
                             t.setAmount(asAmount(v.get("amount")));
@@ -59,16 +59,16 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("shares") //
-                        .match("^STK (?<shares>\\d+,\\d+?) .*") //
+                        .match("^\\W*STK\\W+(?<shares>\\d+,\\d+?) .*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("fee", "currency").optional() //
-                        .match(".* Orderentgelt\\W+(?<currency>\\w{3}+) (?<fee>[\\d.]+,\\d+)-") //
+                        .match(".*\\W+Orderentgelt\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d.]+,\\d+)-") //
                         .assign((t, v) -> t.getPortfolioTransaction().addUnit(new Unit(Unit.Type.FEE, //
                                         Money.of(asCurrencyCode(v.get("currency")), asAmount(v.get("fee"))))))
 
                         .section("fee", "currency").optional() //
-                        .match(".* Börsengebühr (?<currency>\\w{3}+) (?<fee>[\\d.]+,\\d+)-") //
+                        .match(".*\\W+Börsengebühr\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d.]+,\\d+)-") //
                         .assign((t, v) -> t.getPortfolioTransaction().addUnit(new Unit(Unit.Type.FEE, //
                                         Money.of(asCurrencyCode(v.get("currency")), asAmount(v.get("fee"))))))
 
@@ -81,7 +81,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Verkauf");
         this.addDocumentTyp(type);
 
-        Block block = new Block("Verkauf .*");
+        Block block = new Block("\\W*Verkauf(\\W.*)?$");
         type.addBlock(block);
         block.set(new Transaction<BuySellEntry>()
 
@@ -92,13 +92,13 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("isin", "name") //
-                        .find("Gattungsbezeichnung ISIN") //
-                        .match("(?<name>.*)\\W+(?<isin>.+)")
+                        .find("\\W*Gattungsbezeichnung\\W+ISIN") //
+                        .match("(?<name>.*)\\W+(?<isin>\\w+)\\W*$")
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("date", "amount", "currency") //
-                        .find("Wert Konto-Nr. Betrag zu Ihren Gunsten")
-                        .match("(?<date>\\d+.\\d+.\\d{4}) \\d{2}/\\d{4}/\\d{3} (?<currency>\\w{3}+) (?<amount>[\\d.]+,\\d+)") //
+                        .find("\\W*Wert\\W+Konto-Nr.\\W+Betrag zu Ihren Gunsten\\W*")
+                        .match("\\W*(?<date>\\d+\\.\\d+\\.\\d{4}).*(?<currency>\\w{3})\\W+(?<amount>[\\d\\.]+,\\d+)") //
                         .assign((t, v) -> {
                             t.setDate(asDate(v.get("date")));
                             t.setAmount(asAmount(v.get("amount")));
@@ -106,16 +106,16 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("shares") //
-                        .match("^STK (?<shares>\\d+,\\d+?) .*") //
+                        .match("\\W*STK\\W+(?<shares>\\d+,\\d+?)\\W+.*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("fee", "currency").optional() //
-                        .match(".* Orderentgelt (?<currency>\\w{3}+) (?<fee>[\\d.]+,\\d+)-") //
+                        .match(".*\\W+Orderentgelt\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d.]+,\\d+)-") //
                         .assign((t, v) -> t.getPortfolioTransaction().addUnit(new Unit(Unit.Type.FEE, //
                                         Money.of(asCurrencyCode(v.get("currency")), asAmount(v.get("fee"))))))
 
                         .section("fee", "currency").optional() //
-                        .match(".* Börsengebühr (?<currency>\\w{3}+) (?<fee>[\\d.]+,\\d+)-") //
+                        .match(".*\\W+Börsengebühr\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d.]+,\\d+)-") //
                         .assign((t, v) -> t.getPortfolioTransaction().addUnit(new Unit(Unit.Type.FEE, //
                                         Money.of(asCurrencyCode(v.get("currency")), asAmount(v.get("fee"))))))
 
@@ -128,7 +128,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Erträgnisgutschrift");
         this.addDocumentTyp(type);
 
-        Block block = new Block("Erträgnisgutschrift.*EMAILVERSAND.*");
+        Block block = new Block(".*Erträgnisgutschrift\\W+aus\\W+Wertpapieren.*");
         type.addBlock(block);
         block.set(new Transaction<AccountTransaction>()
 
@@ -139,17 +139,17 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("isin", "name") //
-                        .find("Gattungsbezeichnung ISIN") //
+                        .find("\\W*Gattungsbezeichnung\\W+ISIN") //
                         .match("(?<name>.*)\\W+(?<isin>.+)")
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("shares") //
-                        .match("^STK (?<shares>\\d+,\\d+?) .*") //
+                        .match("\\W*STK\\W+(?<shares>\\d+,\\d+?)\\W.*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("date", "amount", "currency") //
-                        .find("Wert Konto-Nr. (Devisenkurs )?Betrag zu Ihren Gunsten")
-                        .match("(?<date>\\d+.\\d+.\\d{4}).*(?<currency>\\w{3}) (?<amount>[\\d.]+,\\d+)") //
+                        .find("\\W*Wert\\W+Konto-Nr.\\W+(Devisenkurs\\W+)?Betrag zu Ihren Gunsten")
+                        .match("\\W*(?<date>\\d+.\\d+.\\d{4}).*(?<currency>\\w{3})\\W+(?<amount>[\\d.]+,\\d+)") //
                         .assign((t, v) -> {
                             t.setDateTime(asDate(v.get("date")));
                             t.setAmount(asAmount(v.get("amount")));
