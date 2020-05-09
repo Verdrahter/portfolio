@@ -34,7 +34,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Kauf");
         this.addDocumentTyp(type);
 
-        Block block = new Block("\\W*Kauf\\W.*");
+        Block block = new Block("\\W*Kauf(\\W.*)?");
         type.addBlock(block);
         block.set(new Transaction<BuySellEntry>()
 
