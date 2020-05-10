@@ -50,7 +50,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("date", "amount", "currency") //
-                        .find("\\W*Wert\\W+Konto-Nr.\\W+Betrag zu Ihren Lasten\\W*")
+                        .find("\\W*Wert\\W+Konto-Nr.\\W+(Devisenkurs\\W+)?Betrag zu Ihren Lasten\\W*")
                         .match("\\W*(?<date>\\d+.\\d+.\\d{4}).*(?<currency>\\w{3})\\W+(?<amount>[\\d.]+,\\d+)") //
                         .assign((t, v) -> {
                             t.setDate(asDate(v.get("date")));
@@ -59,11 +59,11 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("shares") //
-                        .match("^\\W*STK\\W+(?<shares>\\d+,\\d+?) .*") //
+                        .match("^\\W*STK\\W+(?<shares>[\\d\\.]+,\\d+?) .*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("fee", "currency").optional() //
-                        .match(".*\\W+Orderentgelt\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d.]+,\\d+)-") //
+                        .match(".*\\W+Orderentgelt\\W+(?<currency>\\w{3}+)\\W+(?<fee>[\\d\\.]+,\\d+)-") //
                         .assign((t, v) -> t.getPortfolioTransaction().addUnit(new Unit(Unit.Type.FEE, //
                                         Money.of(asCurrencyCode(v.get("currency")), asAmount(v.get("fee"))))))
 
@@ -81,7 +81,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Verkauf");
         this.addDocumentTyp(type);
 
-        Block block = new Block("\\W*Verkauf(\\W.*)?$");
+        Block block = new Block("\\W*(Spitze )?Verkauf(\\W.*)?$");
         type.addBlock(block);
         block.set(new Transaction<BuySellEntry>()
 
@@ -97,7 +97,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("date", "amount", "currency") //
-                        .find("\\W*Wert\\W+Konto-Nr.\\W+Betrag zu Ihren Gunsten\\W*")
+                        .find("\\W*Wert\\W+Konto-Nr.\\W+(Devisenkurs\\W+)?Betrag zu Ihren Gunsten\\W*")
                         .match("\\W*(?<date>\\d+\\.\\d+\\.\\d{4}).*(?<currency>\\w{3})\\W+(?<amount>[\\d\\.]+,\\d+)") //
                         .assign((t, v) -> {
                             t.setDate(asDate(v.get("date")));
@@ -106,7 +106,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         })
 
                         .section("shares") //
-                        .match("\\W*STK\\W+(?<shares>\\d+,\\d+?)\\W+.*") //
+                        .match("\\W*STK\\W+(?<shares>[\\d\\.]+,\\d+?)\\W+.*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("fee", "currency").optional() //
@@ -128,7 +128,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
         DocumentType type = new DocumentType("Erträgnisgutschrift");
         this.addDocumentTyp(type);
 
-        Block block = new Block(".*Erträgnisgutschrift\\W+aus\\W+Wertpapieren.*");
+        Block block = new Block(".*Erträgnisgutschrift(\\W+aus\\W+Wertpapieren.*)?");
         type.addBlock(block);
         block.set(new Transaction<AccountTransaction>()
 
@@ -144,7 +144,7 @@ public class SBrokerPDFExtractor extends AbstractPDFExtractor
                         .assign((t, v) -> t.setSecurity(getOrCreateSecurity(v)))
 
                         .section("shares") //
-                        .match("\\W*STK\\W+(?<shares>\\d+,\\d+?)\\W.*") //
+                        .match("\\W*STK\\W+(?<shares>[\\d\\.]+,\\d+?)\\W.*") //
                         .assign((t, v) -> t.setShares(asShares(v.get("shares"))))
 
                         .section("date", "amount", "currency") //
